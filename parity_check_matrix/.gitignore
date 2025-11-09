@@ -1,0 +1,8 @@
+# Archivo: .gitignore
+# Excluye el directorio del entorno virtual
+venv/
+env/
+
+# Excluye archivos de caché
+__pycache__/
+*.pyc

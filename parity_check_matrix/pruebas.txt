@@ -1,0 +1,48 @@
+• CPU: Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz
+• RAM: 6 GB DDR4
+• Sistema Operativo: Ubuntu 24.04.2 LTS
+• Software: Python 3.12.3
+• Bibliotecas Clave: Galois 0.4.6, NumPy 2.2.6, Tabulate 0.9.0
+
+Rango de los parámetros: n , k , q
+Variar un parámetro mientras los demás permanecen fijos
+
+🔬 Escenario 1: Probar la Escalabilidad en n (con Tasa R fija)
+El objetivo es mostrar la curva O(n3). Esta es la gráfica más importante.
+
+    Vary n: {100,200,300,400,500,600,700,800,900,1000}
+
+        (Si corre muy rápido, ¡sigue subiendo! {1000,1500,2000,2500,…} hasta que tarde unos segundos).
+
+    Fix k: k=n/2 (para mantener la tasa R=0.5 constante).
+
+    Fix q: q=2 (el caso binario es el más rápido y simple para aislar el efecto de n).
+
+    Qué esperar: Verás una curva suave. Si graficas log(tiempo) vs log(n), deberías obtener una línea casi recta con una pendiente de ≈3, lo que probaría tu escalabilidad O(n3).
+
+📈 Escenario 2: Probar el Impacto de la Tasa R=k/n (con n fijo)
+
+El objetivo es ver cómo cambia el rendimiento si el código es "delgado" (k pequeño) o "denso" (k grande).
+
+    Fix n: n=1000 (o el valor grande que hayas alcanzado en el Escenario 1).
+
+    Vary k: {100,200,300,400,500,600,700,800,900}
+
+        (Esto es lo mismo que variar la tasa R de 0.1 a 0.9).
+
+    Fix q: q=2.
+
+    Qué esperar: El tiempo aumentará con k. Como el costo es O(k3+k2n), el crecimiento será notable (probablemente cúbico en k).
+
+
+🧮 Escenario 3: Probar el Impacto del Cuerpo q
+
+El objetivo es ver cuánto más cuesta la aritmética en campos finitos más grandes.
+
+    Vary q: {2,3,5,7,11,13} (primos pequeños) y/o {2,4,8,16,32} (potencias de 2).
+
+    Fix n: n=500 (un valor mediano, que no sea ni muy rápido ni muy lento).
+
+    Fix k: k=250.
+
+    Qué esperar: El tiempo de ejecución aumentará a medida que q crece, ya que las operaciones matemáticas dentro de la biblioteca galois se vuelven más complejas.
