@@ -1,10 +1,8 @@
-import galois # type: ignore
+import galois 
 import numpy as np
 from tabulate import tabulate # type: ignore
 from matriz_chequeo_paridad import matriz_chequeo_paridad
 from random_generator_matrix import random_generator_matrix
-
-
 
 n = 10
 k = 5
@@ -13,7 +11,7 @@ GF = galois.GF(q)
 
 def run_single_test():
     G = random_generator_matrix(n, k, GF)
-    H = matriz_chequeo_paridad(G, GF)[0]
+    H, _ = matriz_chequeo_paridad(G, GF)
     verification = G@(H.T)
     return np.all(verification == 0), G, H, verification, k
 
