@@ -13,15 +13,16 @@ def run_single_test():
     G = random_generator_matrix(n, k, GF)
     H, _ = matriz_chequeo_paridad(G, GF)
     verification = G@(H.T)
-    return np.all(verification == 0), G, H, verification, k
+    return np.all(verification == 0), G, H, verification
 
 success_count = 0
 error_count = 0
 error_details = []
+num_pruebas = 50
 
-for i in range(500):
+for i in range(num_pruebas):
     try:
-        success, G, H, verification, k = run_single_test()
+        success, G, H, verification = run_single_test()
         
         if success:
             success_count += 1
@@ -45,10 +46,10 @@ for i in range(500):
 print(f"\n{'='*50}")
 print(f"RESULTADOS FINALES")
 print(f"{'='*50}")
-print(f"Total de iteraciones: 500")
+print(f"Total de iteraciones: {num_pruebas}")
 print(f"Éxitos: {success_count}")
 print(f"Errores: {error_count}")
-print(f"Tasa de éxito: {success_count/5}%")
+print(f"Tasa de éxito: {success_count*(100/num_pruebas)}%")
 
 if error_details:
     print(f"\nDetalles de los primeros 3 errores:")

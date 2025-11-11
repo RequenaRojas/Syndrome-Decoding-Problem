@@ -1,0 +1,70 @@
+import galois # type: ignore
+import numpy as np
+from random_generator_matrix import random_generator_matrix
+
+from RREF import RREF
+from matriz_chequeo_paridad import matriz_chequeo_paridad
+from tabulate import tabulate # type: ignore
+def generar_combinaciones(aux, k, q):
+    if len(aux) >= q**k: return aux
+    aux1 = []
+    for cad in aux:
+        for i in range(q):
+            aux1.append(np.insert(cad, 0, i))
+    return generar_combinaciones(aux1,k,q )
+
+n = 4
+k = 3
+q = 2
+GF = galois.GF(q)
+G = random_generator_matrix(n,k,GF)
+y = GF.Random((1, k))
+
+
+def sdp_fuerza_bruta(n, k, G, y, q, GF, verbose==False):
+    H , col_piv = matriz_chequeo_paridad(G, GF, verbose)
+    s = y@H
+    if np.all(s == 0): return 1
+    if verbose:
+        print(f"\nSíndrome s = \n", s)
+    
+    not_col_piv = [i for i in range(n) if i not in col_piv]
+
+
+    S = np.array(generar_combinaciones([[i] for i in range(q)], k, q))
+    print(S)
+
+    candidatos = []
+    for comb in S:
+        cand = GF.Zeros(n)
+        for l in range(n):
+            if l in col_piv:
+                i = Hs_row_piv[Hs_col_piv.index(l)]
+                cand[l] = Hs_rref[i][n]
+                for j in range(l+1, n):
+                    if j in Hs_col_piv: continue
+                    cand[l] -= Hs_rref[i][j]*comb[not_Hs_col_piv.index(j)]
+            else:
+                cand[l] = comb[not_Hs_col_piv.index(l)]
+        candidatos.append(cand)
+
+    candidatos = GF(candidatos)
+    """
+    print("\nCandidatos:")
+    print(tabulate(candidatos, tablefmt="plain"))
+    """
+    # Verificación (que tengan el mismo sindrome)
+    for cand in candidatos:
+        ver = H@cand.T
+        if not np.all(ver == s):
+            print("Error")
+            break
+
+    e_min = min(candidatos, key=lambda v: np.count_nonzero(v))
+    print("\n e_min = ", e_min)
+
+
+
+
+
+

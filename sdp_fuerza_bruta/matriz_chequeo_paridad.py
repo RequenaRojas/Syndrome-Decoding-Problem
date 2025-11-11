@@ -105,7 +105,7 @@ def matriz_chequeo_paridad(G, GF, verbose=False):
         H[:,col_piv[t]] = H_est[:, row_piv[t]]
     
     
-    return H, row_piv
+    return H, col_piv
 
 """
 n = 7
