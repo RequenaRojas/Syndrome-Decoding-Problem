@@ -6,7 +6,6 @@ from random_generator_matrix import random_generator_matrix
 from matriz_chequeo_paridad import matriz_chequeo_paridad
 
 
-
 def sdp_espacio_soluciones(H, s, GF, verbose = False):
     n_minus_k , n = H.shape
     k = n - n_minus_k
