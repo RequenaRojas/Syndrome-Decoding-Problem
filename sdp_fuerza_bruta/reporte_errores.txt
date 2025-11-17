@@ -1,0 +1,10 @@
+
+==================================================
+RESULTADOS FINALES
+==================================================
+Total de iteraciones: 10
+Éxitos: 10
+Errores: 0
+Tasa de éxito: 100.0%
+
+¡Felicidades! Todas las pruebas fueron exitosas.

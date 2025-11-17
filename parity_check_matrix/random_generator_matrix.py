@@ -23,3 +23,9 @@ def random_generator_matrix(n, k, GF):
     G = K@G
     return G
     
+def random_generator_matrix(n, k, GF):
+    G = GF.Random((k, n))
+
+    while np.linalg.matrix_rank(G) < k:
+        G = GF.Random((k, n))
+    return G
