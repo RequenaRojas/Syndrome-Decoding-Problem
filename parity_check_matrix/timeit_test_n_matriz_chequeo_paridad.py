@@ -28,7 +28,7 @@ G = random_generator_matrix(n, k, GF)
     t = timeit.Timer(stmt=matriz_chequeo_paridad, setup=SETUP_CODE)
     tiempos = t.repeat(repeat=3, number=1)
 
-    mejor_tiempo_seg = min(tiempos)
+    mejor_tiempo_seg = min(tiempos)  # PROMEDIO
     resultados[n] = mejor_tiempo_seg
 
     print(f"✅ n={n} (k={k}): Mejor tiempo = {mejor_tiempo_seg:.6f} s")
