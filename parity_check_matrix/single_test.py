@@ -18,7 +18,7 @@ def run_single_test():
 success_count = 0
 error_count = 0
 error_details = []
-num_pruebas = 50
+num_pruebas = 500
 
 for i in range(num_pruebas):
     try:

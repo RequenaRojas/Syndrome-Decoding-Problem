@@ -2,51 +2,44 @@ import galois
 import numpy as np
 from tabulate import tabulate
 import itertools
-from random_generator_matrix import random_generator_matrix
+from random_generator_matrix import random_generator_matrix, random_parity_chech_matrix
 from matriz_chequeo_paridad import matriz_chequeo_paridad
 
 
-def sdp_espacio_soluciones(H, s, GF, verbose = False):
+def sdp_cosets(H, s, GF, verbose = False):
     n_minus_k , n = H.shape
     k = n - n_minus_k
     q = GF.order
 
-    T = GF.Zeros((n_minus_k, k+1))
-    for i in range(n_minus_k):
-        for j in range(k):
-            T[i][j] = -H[i][j]
-        T[i][k] = s[i][0]
-    if(verbose):
-        print(f"T:")
-        print(tabulate(T, tablefmt="plain"))
+    G , _= matriz_chequeo_paridad(H, GF)
+    if verbose:
+        print(f"G:")
+        print(tabulate(G, tablefmt="plain"))
 
-    espacio_soluciones = GF.Zeros((q**k, n))
-    pesos = np.zeros(q**k, dtype=int)
+    z = GF.Zeros(n)
+    z[-(n-k):] = s
 
-    prod_q_k = list(itertools.product(list(GF.elements), repeat=k))
+    k_list = list(itertools.product(list(GF.elements), repeat=k))
+    espacio_producto_k = GF(k_list)
 
-    for r in range(q**k):
-        solucion = GF.Zeros(n)
-        for i in range(k):
-            solucion[i] = prod_q_k[r][i]
-        for i in range(k, n):
-            for t in range(k):
-                solucion[i] += prod_q_k[r][t]*T[i-k][t]
-            solucion[i] += T[i-k][k]
-        espacio_soluciones[r] = solucion
-        pesos[r] = np.count_nonzero(solucion)
+    codewords = espacio_producto_k @ G
+
+    coset = codewords + z
+
+    pesos = np.count_nonzero(coset.view(np.ndarray), axis=1)
+    if verbose:
+        print(f"Espacio_coset:")
+        print(tabulate(coset, tablefmt="plain"))
+        print(pesos)
     
-    
-    if(verbose):
-        print(f"Espacio_soluciones:")
-        print(tabulate(espacio_soluciones, tablefmt="plain"))
-
     indice_min_peso = np.argmin(pesos)
-    e_min_peso = espacio_soluciones[indice_min_peso].reshape(n, 1)
-    if(verbose):
+    e_min_peso = coset[indice_min_peso]
+
+    if verbose:
         print(f"e:")
         print(e_min_peso)
-    return e_min_peso
+    
+    return e_min_peso, G
 
 
 
@@ -56,30 +49,28 @@ q = 2
 GF = galois.GF(q)
 
 def run_single_test():
-    G = random_generator_matrix(n, k, GF)
-    H, _ = matriz_chequeo_paridad(G, GF)
-
-    y = GF.Random((n, 1))
+    H = random_parity_chech_matrix(n, n-k, GF)
+    y = GF.Random(n)
     s = H@y
     while np.all(s == 0):
-        y = GF.Random((n, 1))
+        y = GF.Random(n)
         s = H@y
    
-    e_min_peso = sdp_espacio_soluciones(H, s, GF)
+    e_min_peso, G = sdp_cosets(H, s, GF)
 
     x = y + e_min_peso
     verification = H@x
     sucess = np.all(verification == 0)
-    return sucess, G, H, y, e_min_peso, verification
+    return sucess, G, H, y, s, e_min_peso, verification
 
 success_count = 0
 error_count = 0
 error_details = []
-num_pruebas = 50
+num_pruebas = 500
 
 for i in range(num_pruebas):
     try:
-        success, G, H, y, e, verification = run_single_test()
+        success, G, H, y, s, e, verification = run_single_test()
         
         if success:
             success_count += 1
@@ -90,6 +81,7 @@ for i in range(num_pruebas):
                 'G': G.copy(),
                 'H': H.copy(),
                 'y': y.copy(),
+                's': s.copy(),
                 'e': e.copy(),
                 'verification': verification.copy(),
             })
@@ -120,6 +112,8 @@ if error_details:
         print(tabulate(error['H'], tablefmt="plain"))
         print("y:")
         print(tabulate(error['y'], tablefmt="plain"))
+        print("s:")
+        print(tabulate(error['s'], tablefmt="plain"))
         print("e:")
         print(e)
         print("verification:")
