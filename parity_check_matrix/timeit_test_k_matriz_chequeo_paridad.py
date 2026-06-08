@@ -7,9 +7,10 @@ import os
 matriz_chequeo_paridad = "matriz_chequeo_paridad(G, GF)"
 resultados = {}
 
-n = 1000
+n = 60
 q = 2
-for k in range(100, 901, 100):
+K_values = [int(n * p) for p in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]]
+for k in K_values:
     NUM_ITERACIONES = 1
     SETUP_CODE = f"""
 import galois

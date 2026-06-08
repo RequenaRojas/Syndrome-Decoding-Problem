@@ -8,7 +8,7 @@ import os
 q = 2
 matriz_chequeo_paridad = "matriz_chequeo_paridad(G, GF)"
 resultados = {}
-for n in range(100, 1001, 100):
+for n in range(20, 301, 20):
     # Tasa R = 0.5
     k = int(n/2)
     NUM_ITERACIONES = 1

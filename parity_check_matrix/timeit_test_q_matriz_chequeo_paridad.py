@@ -7,9 +7,9 @@ import os
 matriz_chequeo_paridad = "matriz_chequeo_paridad(G, GF)"
 resultados = {}
 
-n = 500
-k = 250
-Q_values = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31]
+n = 60
+k = 30
+Q_values = [2, 3, 5, 7, 11, 13, 17]
 for q in Q_values:
     NUM_ITERACIONES = 1
     SETUP_CODE = f"""
