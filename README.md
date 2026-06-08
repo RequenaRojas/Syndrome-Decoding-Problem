@@ -10,15 +10,3 @@ Este proyecto fue desarrollado como parte de las actividades de investigación a
 * **Búsqueda Exhaustiva:** Implementación determinista (fuerza bruta) para resolver instancias del SDP con parámetros reducidos.
 * **Information Set Decoding (ISD):**  * Implementación optimizada del algoritmo de **Dumer** (1991) utilizando técnicas de encuentro en el medio (*meet-in-the-middle*).
 * **Benchmarking:** Entorno de pruebas automatizado para perfilar y comparar la complejidad temporal y el escalamiento de los algoritmos frente a variaciones en $n$, $k$ y $q$.
-
-## 🛠️ Requisitos del Sistema
-
-El proyecto está diseñado y probado para entornos Linux (Ubuntu). Requiere Python 3 y las siguientes bibliotecas de cálculo científico:
-
-* `numpy`
-* `galois` (para la aritmética sobre campos finitos)
-
-Puedes instalar las dependencias ejecutando:
-
-```bash
-pip install numpy galois
