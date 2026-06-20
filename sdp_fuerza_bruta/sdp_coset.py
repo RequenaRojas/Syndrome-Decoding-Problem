@@ -2,75 +2,96 @@ import galois
 import numpy as np
 from tabulate import tabulate
 import itertools
-from random_generator_matrix import random_generator_matrix, random_parity_chech_matrix
-from matriz_chequeo_paridad import matriz_chequeo_paridad
 
+def solve_sdp_cosets(H, s, GF, verbose=False):
+    """
+    Solves the SDP by generating the affine space (coset) of solutions z + C.
+    Assumes H is in systematic form H = [I_{n-k} | A].
+    """
+    r, n = H.shape
+    k = n - r
 
-def sdp_cosets(H, s, GF, verbose = False):
-    n_minus_k , n = H.shape
-    k = n - n_minus_k
-    q = GF.order
-
-    G , _= matriz_chequeo_paridad(H, GF)
+    G = H.null_space()
+    
     if verbose:
-        print(f"G:")
-        print(tabulate(G, tablefmt="plain"))
+        print(f"G:\n{tabulate(G, tablefmt='plain')}")
 
+    # Construct the particular solution z = (s, 0)
     z = GF.Zeros(n)
-    z[-(n-k):] = s
+    z[:r] = s.flatten()
 
-    k_list = list(itertools.product(list(GF.elements), repeat=k))
-    espacio_producto_k = GF(k_list)
+    # Generate all messages m in GF^k
+    k_list = list(itertools.product(range(GF.order), repeat=k))
+    messages = GF(k_list)
 
-    codewords = espacio_producto_k @ G
+    # Compute all codewords: c = mG
+    codewords = messages @ G
 
+    # Construct the coset: z + C
     coset = codewords + z
 
-    pesos = np.count_nonzero(coset.view(np.ndarray), axis=1)
+    # Calculate weights (non-zero entries per row)
+    weights = np.count_nonzero(coset.view(np.ndarray), axis=1)
+    
     if verbose:
-        print(f"Espacio_coset:")
+        print(f"Coset Space:")
         print(tabulate(coset, tablefmt="plain"))
-        print(pesos)
+        print(f"Weights: {weights}")
     
-    indice_min_peso = np.argmin(pesos)
-    e_min_peso = coset[indice_min_peso]
+    min_weight_id = np.argmin(weights)
+    e_min_weight = coset[min_weight_id]
 
     if verbose:
-        print(f"e:")
-        print(e_min_peso)
+        print(f"e (min weight = {weights[min_weight_id]}):\n{e_min_weight}")
     
-    return e_min_peso, G
+    return e_min_weight, G
 
-
-
-n = 5
-k = 2
-q = 2
-GF = galois.GF(q)
-
-def run_single_test():
-    H = random_parity_chech_matrix(n, n-k, GF)
+def run_single_test_coset(n, k, GF):
+    r = n - k
+    # Force systematic H: H = [I_r | A]
+    I_r = GF.Identity(r)
+    A = GF.Random((r, k))
+    H = np.hstack((I_r, A))
+    
     y = GF.Random(n)
-    s = H@y
+    s = H @ y
+    
     while np.all(s == 0):
         y = GF.Random(n)
-        s = H@y
+        s = H @ y
    
-    e_min_peso, G = sdp_cosets(H, s, GF)
+    e_min_weight, G = solve_sdp_cosets(H, s, GF)
 
-    x = y + e_min_peso
-    verification = H@x
-    sucess = np.all(verification == 0)
-    return sucess, G, H, y, s, e_min_peso, verification
+    # Verify decoding: b = y - e
+    b_computed = y - e_min_weight
+    verification = H @ b_computed
+    success = np.all(verification == 0)
+    
+    return success, G, H, y, s, e_min_weight, verification
 
+# --- Testing Loop ---
 success_count = 0
 error_count = 0
 error_details = []
-num_pruebas = 500
+num_tests = 5
 
-for i in range(num_pruebas):
+n_vals = [18 + 2*i for i in range(num_tests)]
+k_vals = [n_vals[i]//2 for i in range(num_tests)]
+
+print(f"\n{'='*50}")
+print(f"INITIALIZING TESTS - COSET SEARCH")
+print(f"{'='*50}")
+print(f"Testing range for n: {n_vals}")
+print(f"Testing range for k: {k_vals}")
+print(f"Total iterations planned: {num_tests}\n")
+
+GF = galois.GF(2)
+
+for i in range(num_tests):
+    n = n_vals[i]
+    k = k_vals[i]
     try:
-        success, G, H, y, s, e, verification = run_single_test()
+        success, G, H, y, s, e, verification = run_single_test_coset(n, k, GF)
         
         if success:
             success_count += 1
@@ -85,36 +106,27 @@ for i in range(num_pruebas):
                 'e': e.copy(),
                 'verification': verification.copy(),
             })
-            print(f"Error en iteración {i}")
+            print(f"Error at iteration {i} with n={n}, k={k}")
             
-    except Exception as e:
+    except Exception as exc:
         error_count += 1
-        print(f"Excepción en iteración {i}: {str(e)}")
-        import traceback
-        traceback.print_exc()
-
+        print(f"Exception at iteration {i}: {str(exc)}")
 
 print(f"\n{'='*50}")
-print(f"RESULTADOS FINALES")
+print(f"FINAL RESULTS")
 print(f"{'='*50}")
-print(f"Total de iteraciones: {num_pruebas}")
-print(f"Éxitos: {success_count}")
-print(f"Errores: {error_count}")
-print(f"Tasa de éxito: {success_count*(100/num_pruebas)}%")
+print(f"Total iterations: {num_tests}")
+print(f"Successes: {success_count}")
+print(f"Errors: {error_count}")
+print(f"Success rate: {success_count*(100/num_tests)}%")
 
 if error_details:
-    print(f"\nDetalles de los primeros 3 errores:")
-    for i, error in enumerate(error_details[:3]):
-        print(f"\nError {i + 1} (Iteración {error['iteration']}):")
-        print("Matriz G:")
-        print(tabulate(error['G'], tablefmt="plain"))
-        print("Matriz H:")
-        print(tabulate(error['H'], tablefmt="plain"))
-        print("y:")
-        print(tabulate(error['y'], tablefmt="plain"))
-        print("s:")
-        print(tabulate(error['s'], tablefmt="plain"))
-        print("e:")
-        print(e)
-        print("verification:")
-        print(tabulate(error['verification'], tablefmt="plain"))
+    print(f"\nDetails of the first 3 errors:")
+    for i, err in enumerate(error_details[:3]):
+        print(f"\nError {i + 1} (Iteration {err['iteration']}):")
+        print("Matrix G:\n", tabulate(err['G'], tablefmt="plain"))
+        print("Matrix H:\n", tabulate(err['H'], tablefmt="plain"))
+        print("y:\n", err['y'])
+        print("s:\n", err['s'])
+        print("e:\n", err['e'])
+        print("Verification (Hb):\n", err['verification'])
