@@ -1,28 +1,21 @@
-import numpy as np
-import galois
-from itertools import combinations
-import scipy.special
 import time
+import numpy as np
+import pandas as pd
+import galois
+import scipy.special
 import matplotlib.pyplot as plt
+from itertools import combinations
 
-GF = galois.GF(2)
-
-def random_parity_check_matrix(n, r, GF):
-    H = GF.Random((r, n))
-    while np.linalg.matrix_rank(H) != r:
-        H = GF.Random((r, n))
-    return H
-
-def calcular_cota_gv(n: int, r: int) -> int:
-    espacio_sindromes = 2**r
-    volumen_esfera = 0
+def compute_gv_bound(n: int, r: int) -> int:
+    syndrome_space = 2**r
+    sphere_volume = 0
     for t in range(1, n + 1):
-        volumen_esfera += scipy.special.comb(n, t, exact=True)
-        if volumen_esfera >= espacio_sindromes:
+        sphere_volume += scipy.special.comb(n, t, exact=True)
+        if sphere_volume >= syndrome_space:
             return t
     return n
 
-def generate_test_instance(n, r, t):
+def generate_test_instance(n, r, t, GF):
     """
     Generates a full-rank parity-check matrix H, a random codeword c, 
     an error vector e of exact weight t, and the resulting syndrome v.
@@ -46,10 +39,10 @@ def generate_test_instance(n, r, t):
     v = H @ y
     return H, c, e, v
 
-
-def dumer_solver(n, r, H, v, t_range):
+def dumer_solver_probabilistic(n, r, H, v, t_range, GF):
     """
-    Ejecuta el algoritmo de Dumer y retorna el tiempo tomado.
+    Executes Dumer's algorithm iteratively over a range of target weights
+    to simulate a probabilistic search (Noisy Channel Regime).
     """
     p = n // 2
     start_time = time.perf_counter()
@@ -57,15 +50,16 @@ def dumer_solver(n, r, H, v, t_range):
     for t in t_range:    
         for t1 in range(max(0, t - (n - p)), min(t, p) + 1):
             t2 = t - t1
-            
             Z = []
             
+            # Z': First half
             for pos1 in combinations(range(p), t1):
                 e_prime = GF.Zeros(n)
                 e_prime[list(pos1)] = 1
                 v0 = H @ e_prime
                 Z.append((tuple(v0.tolist()), 0, tuple(e_prime.tolist())))
                 
+            # Z'': Second half
             for pos2 in combinations(range(p, n), t2):
                 e_double = GF.Zeros(n)
                 e_double[list(pos2)] = 1
@@ -75,66 +69,79 @@ def dumer_solver(n, r, H, v, t_range):
 
             Z.sort()
 
+            # Search for collisions
             for i in range(len(Z) - 1):
                 if (Z[i][0] == Z[i+1][0]) and (Z[i][1] == 0 and Z[i+1][1] == 1):
-                    e_izq = GF(Z[i][2])
-                    e_der = GF(Z[i+1][2])
-                    candidato = e_izq + e_der
+                    e_left = GF(Z[i][2])
+                    e_right = GF(Z[i+1][2])
+                    candidate = e_left + e_right
                     
-                    if np.array_equal(H @ candidato, v):
-                        end_time = time.perf_counter()
-                        return end_time - start_time 
-        
+                    if np.array_equal(H @ candidate, v):
+                        return time.perf_counter() - start_time 
        
-    end_time = time.perf_counter()
-    return end_time - start_time
+    return time.perf_counter() - start_time
 
-# --------------------------------------- CONFIGURACIÓN DEL BENCHMARK ---------------------------------------
-# R = 0.5
-rango_n = range(10, 40, 2) 
-iteraciones_por_n = 10
-tiempos_promedio = []
-
-print("Iniciando Benchmark de Dumer (R=0.5, t in [1, D_GV] ...")
-
-for n in rango_n:
-    r = n // 2
-    tiempo_acumulado = 0.0
+def run_benchmark():
+    GF = galois.GF(2)
+    # Start with a safe range for testing. Increase for overnight runs.
+    n_vals = list(range(10, 32, 2)) 
+    trials_per_n = 10
     
-    print(f"\nEvaluando n = {n} (r = {r})")
-    
-    for iteracion in range(iteraciones_por_n):
+    results = []
 
-        D_GV = calcular_cota_gv(n, r)
-        t_range = range(1, D_GV+1) 
-        t = np.random.choice(t_range)
-        H, b, e, v = generate_test_instance(n, r, t)
+    print(f"{'='*60}")
+    print("STARTING DUMER BENCHMARK (PROBABILISTIC / NOISY CHANNEL)")
+    print(f"Targeting: R=0.5, t iterates sequentially in [1, t_GV]")
+    print(f"{'='*60}\n")
 
-        t_ejecucion = dumer_solver(n, r, H, v, t_range)
-        tiempo_acumulado += t_ejecucion
-        print(f"  Iteración {iteracion+1}: {t_ejecucion:.4f} seg")
+    for n in n_vals:
+        r = n // 2
+        k = n - r
+        total_time = 0.0
         
-    tiempos_promedio.append(tiempo_acumulado / iteraciones_por_n)
+        D_GV = compute_gv_bound(n, r)
+        t_range = range(1, D_GV + 1)
+        
+        print(f"Benchmarking n={n} (r={r}, t_GV={D_GV})... ", end="", flush=True)
+        
+        for _ in range(trials_per_n):
+            # In a real noisy channel scenario, the actual error weight 
+            # is randomly distributed up to the GV bound.
+            actual_t = np.random.choice(t_range)
+            H, c, e, v = generate_test_instance(n, r, actual_t, GF)
+            
+            exec_time = dumer_solver_probabilistic(n, r, H, v, t_range, GF)
+            total_time += exec_time
+            
+        avg_time = total_time / trials_per_n
+        
+        results.append({
+            'n': n,
+            'k': k,
+            't_GV': D_GV,
+            'Avg_Time_sec': avg_time
+        })
+        print(f"Done. (Avg Time: {avg_time:.4f}s)")
 
-# ------------------------------------------ GRAFICACIÓN ------------------------------------------
-plt.figure(figsize=(10, 6))
+    # Export results for LaTeX integration
+    df = pd.DataFrame(results)
+    df.to_csv("dumer_probabilistic_results.csv", index=False)
 
-# Gráfica en escala Lineal
-plt.subplot(1, 2, 1)
-plt.plot(rango_n, tiempos_promedio, marker='o', color='b', linestyle='-')
-plt.title("Complejidad (Escala Lineal)")
-plt.xlabel("Longitud del código (n)")
-plt.ylabel("Tiempo Promedio (segundos)")
-plt.grid(True)
+    # Generate visual plot
+    plt.figure(figsize=(8, 6))
+    plt.yscale('log')
+    
+    # Plotting the main benchmark line
+    plt.plot(df['n'], df['Avg_Time_sec'], marker='s', linestyle='-', color='teal', label="Dumer's MitM (Probabilistic Iteration)")
+    
+    plt.title("Dumer's Algorithm Benchmark: Probabilistic Search\nTarget weight $t$ iterating sequentially in $[1, t_{GV}]$")
+    plt.xlabel("Code Length ($n$)")
+    plt.ylabel("Execution Time (Seconds) [Log Scale]")
+    plt.grid(True, which="both", ls="--", alpha=0.5)
+    plt.legend()
+    
+    plt.savefig("plot_dumer_probabilistic.pdf", format='pdf', bbox_inches='tight')
+    print("\nFiles successfully exported: 'dumer_probabilistic_results.csv' and 'plot_dumer_probabilistic.pdf'")
 
-# Gráfica en escala Semilogarítmica
-plt.subplot(1, 2, 2)
-plt.plot(rango_n, tiempos_promedio, marker='o', color='r', linestyle='-')
-plt.yscale('log') # Eje Y logarítmico
-plt.title("Complejidad (Escala Logarítmica)")
-plt.xlabel("Longitud del código (n)")
-plt.ylabel("Tiempo Promedio (log sec)")
-plt.grid(True, which="both", ls="--")
-
-plt.tight_layout()
-plt.show()
+if __name__ == "__main__":
+    run_benchmark()
