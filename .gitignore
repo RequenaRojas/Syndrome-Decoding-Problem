@@ -1,3 +1,6 @@
 .venv/
 __pycache__/
 *.pyc
+sdp_fuerza_bruta_0
+alg0.py
+timeit_test_sdp.py

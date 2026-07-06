@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from sdp_coset import solve_sdp_cosets
+from mld_coset import solve_mld_cosets
 from edp_brute_force import solve_esd_vectorized
 
 def generate_shared_instance(n, k, t, GF):
@@ -37,7 +37,7 @@ def run_comparative_benchmark():
     results = []
     
     print(f"{'='*60}")
-    print(f"STARTING COMPARATIVE BENCHMARK: SDP vs ESD")
+    print(f"STARTING COMPARATIVE BENCHMARK: MLD vs ESD")
     print(f"Code Rate: R = {code_rate} | Relative Weight: delta = {delta}")
     print(f"{'='*60}\n")
     
@@ -45,7 +45,7 @@ def run_comparative_benchmark():
         k = int(n * code_rate)
         t = max(1, int(n * delta)) 
         
-        time_sdp_total = 0.0
+        time_mld_total = 0.0
         time_esd_total = 0.0
         
         print(f"Benchmarking n={n:02d}, k={k:02d}, t={t:02d}... ", end="", flush=True)
@@ -53,31 +53,31 @@ def run_comparative_benchmark():
         for _ in range(trials):
             H, s = generate_shared_instance(n, k, t, GF)
             
-            # --- Measure General SDP (Coset Approach) ---
-            start_sdp = time.perf_counter()
-            solve_sdp_cosets(H, s, GF, verbose=False)
-            time_sdp_total += (time.perf_counter() - start_sdp)
+            # --- Measure General MLD (Coset Approach) ---
+            start_mld = time.perf_counter()
+            solve_mld_cosets(H, s, GF, verbose=False)
+            time_mld_total += (time.perf_counter() - start_mld)
             
             # --- Measure Exact Syndrome Decoding (Vectorized Approach) ---
             start_esd = time.perf_counter()
             solve_esd_vectorized(H, s, t, GF, verbose=False)
             time_esd_total += (time.perf_counter() - start_esd)
             
-        avg_time_sdp = time_sdp_total / trials
+        avg_time_mld = time_mld_total / trials
         avg_time_esd = time_esd_total / trials
         
         results.append({
             'n': n,
             'k': k,
             't': t,
-            'Time_SDP_sec': avg_time_sdp,
+            'Time_MLD_sec': avg_time_mld,
             'Time_ESD_sec': avg_time_esd
         })
-        print(f"Done. (SDP: {avg_time_sdp:.4f}s | ESD: {avg_time_esd:.4f}s)")
+        print(f"Done. (MLD: {avg_time_mld:.4f}s | ESD: {avg_time_esd:.4f}s)")
         
     # Data Export
     df = pd.DataFrame(results)
-    csv_filename = "comparative_sdp_vs_esd_data.csv"
+    csv_filename = "comparative_mld_vs_esd_data.csv"
     df.to_csv(csv_filename, index=False)
     
     # Visual Generation
@@ -85,17 +85,17 @@ def run_comparative_benchmark():
     plt.yscale('log')
     
     # Plotting both curves
-    plt.plot(df['n'], df['Time_SDP_sec'], marker='o', linestyle='-', color='red', label='General SDP (Coset)')
+    plt.plot(df['n'], df['Time_MLD_sec'], marker='o', linestyle='-', color='red', label='General MLD (Coset)')
     plt.plot(df['n'], df['Time_ESD_sec'], marker='s', linestyle='--', color='blue', label=fr'ESD (Target $t \approx 0.2n$)')    
    
     
-    plt.title('Brute-Force Complexity: General SDP vs. Exact Syndrome Decoding')
+    plt.title('Brute-Force Complexity: General MLD vs. Exact Syndrome Decoding')
     plt.xlabel('Code Length ($n$)')
     plt.ylabel('Execution Time (Seconds) [Log Scale]')
     plt.grid(True, which="both", ls="--", alpha=0.5)
     plt.legend()
     
-    pdf_filename = "plot_comparative_sdp_vs_esd.pdf"
+    pdf_filename = "plot_comparative_mld_vs_esd.pdf"
     plt.savefig(pdf_filename, format='pdf', bbox_inches='tight')
     print(f"\nBenchmark complete. Files exported: '{csv_filename}' and '{pdf_filename}'")
 

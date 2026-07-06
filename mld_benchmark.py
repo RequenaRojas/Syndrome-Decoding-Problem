@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from sdp_coset import solve_sdp_cosets_systematic_form, solve_sdp_cosets
+from mld_coset import solve_mld_cosets_systematic_form, solve_mld_cosets
 
 def generate_systematic_instance(n, k, GF):
     """
@@ -30,7 +30,7 @@ def run_coset_benchmark():
     results = []
 
     print(f"{'='*60}")
-    print(f"STARTING COSET SDP BENCHMARK: SYSTEMATIC VS GENERAL")
+    print(f"STARTING COSET mld BENCHMARK: SYSTEMATIC VS GENERAL")
     print(f"Targeting: n = {n_vals}")
     print(f"Code Rate: R = {code_rate}")
     print(f"{'='*60}\n")
@@ -48,12 +48,12 @@ def run_coset_benchmark():
             
             # --- Benchmark: Systematic Form (Direct Assignment) ---
             start_time = time.perf_counter()
-            solve_sdp_cosets_systematic_form(H, s, GF, verbose=False)
+            solve_mld_cosets_systematic_form(H, s, GF, verbose=False)
             time_sys_total += (time.perf_counter() - start_time)
             
             # --- Benchmark: General Form (RREF Overhead) ---
             start_time = time.perf_counter()
-            solve_sdp_cosets(H, s, GF, verbose=False)
+            solve_mld_cosets(H, s, GF, verbose=False)
             time_gen_total += (time.perf_counter() - start_time)
             
         avg_time_sys = time_sys_total / trials_per_n
@@ -78,7 +78,7 @@ def run_coset_benchmark():
     plt.plot(df['n'], df['Time_Sys_sec'], marker='o', linestyle='-', color='b', label='Systematic Coset (Direct $z$)')
     plt.plot(df['n'], df['Time_Gen_sec'], marker='s', linestyle='--', color='r', label='General Coset (RREF $z$)')
     
-    plt.title('SDP Coset Benchmark: Systematic vs General Matrix\nConstant Rate $R=0.5$')
+    plt.title('mld Coset Benchmark: Systematic vs General Matrix\nConstant Rate $R=0.5$')
     plt.xlabel('Code Length ($n$)')
     plt.ylabel('Execution Time (Seconds) [Log Scale]')
     plt.grid(True, which="both", ls="--", alpha=0.5)

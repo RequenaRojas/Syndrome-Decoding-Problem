@@ -36,10 +36,10 @@ def generate_test_instance(n, r, t, GF):
     e[positions] = 1
     
     y = c + e
-    v = H @ y
-    return H, c, e, v
+    s = H @ y
+    return H, c, e, s
 
-def dumer_solver(n, r, H, v, t, GF):
+def dumer_solver(n, r, H, s, t, GF):
     """
     Executes Dumer's algorithm for a fixed target weight t 
     and returns the execution time.
@@ -63,7 +63,7 @@ def dumer_solver(n, r, H, v, t, GF):
             e_double = GF.Zeros(n)
             e_double[list(pos2)] = 1
             v1 = H @ e_double
-            v1_plus_v = v1 + v  
+            v1_plus_v = v1 + s  
             Z.append((tuple(v1_plus_v.tolist()), 1, tuple(e_double.tolist())))
 
         Z.sort()
@@ -75,7 +75,7 @@ def dumer_solver(n, r, H, v, t, GF):
                 e_right = GF(Z[i+1][2])
                 candidate = e_left + e_right
                 
-                if np.array_equal(H @ candidate, v):
+                if np.array_equal(H @ candidate, s):
                     return time.perf_counter() - start_time 
        
     return time.perf_counter() - start_time

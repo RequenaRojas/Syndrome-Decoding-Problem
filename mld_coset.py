@@ -3,9 +3,9 @@ import numpy as np
 from tabulate import tabulate
 import itertools
 
-def solve_sdp_cosets_systematic_form(H, s, GF, verbose=False):
+def solve_mld_cosets_systematic_form(H, s, GF, verbose=False):
     """
-    Solves the SDP by generating the affine space (coset) of solutions z + C.
+    Solves the MLD by generating the affine space (coset) of solutions z + C.
     Assumes H is in systematic form H = [I_{n-k} | A].
     """
     r, n = H.shape
@@ -46,9 +46,9 @@ def solve_sdp_cosets_systematic_form(H, s, GF, verbose=False):
     
     return e_min_weight, G
 
-def solve_sdp_cosets(H, s, GF, verbose=False):
+def solve_mld_cosets(H, s, GF, verbose=False):
     """
-    Solves the SDP by generating the affine space (coset) of solutions z + C.
+    Solves the mld by generating the affine space (coset) of solutions z + C.
     Accepts ANY full-rank parity-check matrix H (does not need to be systematic).
     """
     r, n = H.shape
@@ -113,7 +113,7 @@ def run_single_test_coset(n, k, GF):
         y = GF.Random(n)
         s = H @ y
    
-    e_min_weight, G = solve_sdp_cosets(H, s, GF)
+    e_min_weight, G = solve_mld_cosets(H, s, GF)
 
     # Verify decoding: b = y - e
     b_computed = y - e_min_weight
@@ -123,7 +123,7 @@ def run_single_test_coset(n, k, GF):
     return success, G, H, y, s, e_min_weight, verification
 
 
-def run_sdp_coset_testing_loop():
+def run_mld_coset_testing_loop():
     # --- Testing Loop ---
     success_count = 0
     error_count = 0
@@ -188,4 +188,4 @@ def run_sdp_coset_testing_loop():
     return 0
 
 if __name__ == "__main__":
-    run_sdp_coset_testing_loop()
+    run_mld_coset_testing_loop()

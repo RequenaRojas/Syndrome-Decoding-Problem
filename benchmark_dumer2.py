@@ -108,9 +108,9 @@ def run_benchmark():
             # In a real noisy channel scenario, the actual error weight 
             # is randomly distributed up to the GV bound.
             actual_t = np.random.choice(t_range)
-            H, c, e, v = generate_test_instance(n, r, actual_t, GF)
+            H, c, e, s = generate_test_instance(n, r, actual_t, GF)
             
-            exec_time = dumer_solver_probabilistic(n, r, H, v, t_range, GF)
+            exec_time = dumer_solver_probabilistic(n, r, H, s, t_range, GF)
             total_time += exec_time
             
         avg_time = total_time / trials_per_n
